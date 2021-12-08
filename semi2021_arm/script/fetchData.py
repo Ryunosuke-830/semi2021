@@ -12,26 +12,38 @@ from jsk_recognition_msgs.msg import PeoplePoseArray
 import math
 import time
 
+# useRightHand
+global width
+global height
+width = 640
+height = 480
+
 global baseX
 global baseY
-baseX = 640/2.0
-baseY = 480/2.0
+global halfX
+halfX = width/2.0
+baseX = width/4.0
+baseY = height/2.0
 
 class HumanPoseTeleop:
     def __init__(self):
-        self.x = baseX
-        self.y = baseY
-        self.z = 0.0
 
         self.human_pose_sub = rospy.Subscriber('/edgetpu_human_pose_estimator/output/poses', PeoplePoseArray, self.callback)
         self.cmd_vel_pub = rospy.Publisher('/tello/cmd_vel', Twist, queue_size=10)
         self.takeoff_pub = rospy.Publisher('/tello/takeoff', Empty, queue_size=1)
+        self.land_pub = rospy.Publisher('/tello/land', Empty, queue_size=1)
+
+    def setZero(self, twist):
+        twist.linear.x = 0.0
+        twist.linear.y = 0.0
+        twist.linear.z = 0.0
 
     def callback(self, msg):
         right_wrist = (False, 0)
         right_shoulder = (False, 0)
         left_wrist = (False,0)
         left_shoulder = (False,0)
+        nose = (False, 0)
 
         if msg.poses:
             poses = msg.poses
@@ -46,11 +58,14 @@ class HumanPoseTeleop:
                     left_wrist = (True,i)
                 elif item == 'left shoulder':
                     left_shoulder = (True,i)
+                elif item == 'nose':
+                    nose = (True,i)
 
             right_shoulder_pos = None
             right_wrist_pos = None
             left_shoulder_pos = None
             left_wrist_pos = None
+            nose_pos = None
 
             if right_wrist[0]:
                 right_wrist_pos = pose[right_wrist[1]].position
@@ -60,31 +75,40 @@ class HumanPoseTeleop:
                 right_shoulder_pos = pose[right_shoulder[1]].position
             if left_shoulder[0]:
                 left_shoulder_pos = pose[left_shoulder[1]].position
+            if nose[0]:
+                nose_pos = pose[nose[1]].position
 
-            if right_shoulder_pos is None or left_shoulder_pos is None or \
-               right_wrist_pos is None or left_wrist_pos is None:
-                return
             
+            if nose_pos is None:
+                self.land_pub.publish()
+            else:
+                self.takeoff_pub.publish()
+
+
+            tw = Twist()
+            if right_wrist_pos is None or right_wrist_pos.x >= halfX:
+                self.setZero(tw)
+                self.cmd_vel_pub.publish(tw)
+                return
                 
             # TODO: implement takeoff / landing
             # if right_wrist_pos.y > right_shoulder_pos.y:
             #     self.takeoff_pub.publish()
 
-            controlX = right_wrist_pos.x - baseX
+            controlX = -(right_wrist_pos.x - baseX)*2
             controlY = -(right_wrist_pos.y - baseY)
-
-            tw = Twist()
+            
             tw.linear.y = controlX/400.0
             tw.linear.z = controlY/400.0
-            if left_wrist_pos.y >= left_shoulder_pos.y:
-                tw.linear.y = 0.0
-                tw.linear.z = 0.0
+            # if left_wrist_pos.y >= left_shoulder_pos.y:
+            #     tw.linear.y = 0.0
+            #     tw.linear.z = 0.0
 
             self.cmd_vel_pub.publish(tw)
 
             str1 = "right: x: {}, y: {} ".format(controlX,controlY)
-            str2 = "left: wristY={}, shoulderY={}".format(left_wrist_pos.y, left_shoulder_pos.y)
-            rospy.loginfo_throttle(0.5, str1 + str2)
+            # str2 = "left: wristY={}, shoulderY={}".format(left_wrist_pos.y, left_shoulder_pos.y)
+            rospy.loginfo_throttle(0.5, str1)
 
 if __name__ == '__main__':
     try:
