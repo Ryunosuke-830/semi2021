@@ -47,10 +47,10 @@ class HumanPoseTeleop:
                 elif item == 'left shoulder':
                     left_shoulder = (True,i)
 
-            right_shoulder_pos = Position()
-            right_wrist_pos = Position()
-            left_shoulder_pos = Position()
-            left_wrist_pos = Position()
+            right_shoulder_pos = None
+            right_wrist_pos = None
+            left_shoulder_pos = None
+            left_wrist_pos = None
 
             if right_wrist[0]:
                 right_wrist_pos = pose[right_wrist[1]].position
@@ -61,7 +61,11 @@ class HumanPoseTeleop:
             if left_shoulder[0]:
                 left_shoulder_pos = pose[left_shoulder[1]].position
 
-
+            if right_shoulder_pos is None or left_shoulder_pos is None or \
+               right_wrist_pos is None or left_wrist_pos is None:
+                return
+            
+                
             # TODO: implement takeoff / landing
             # if right_wrist_pos.y > right_shoulder_pos.y:
             #     self.takeoff_pub.publish()
@@ -70,9 +74,9 @@ class HumanPoseTeleop:
             controlY = -(right_wrist_pos.y - baseY)
 
             tw = Twist()
-            tw.linear.y = controlX/200.0
-            tw.linear.z = controlY/200.0
-            if left_wrist_pos.y <= left_shoulder_pos.y:
+            tw.linear.y = controlX/400.0
+            tw.linear.z = controlY/400.0
+            if left_wrist_pos.y >= left_shoulder_pos.y:
                 tw.linear.y = 0.0
                 tw.linear.z = 0.0
 
