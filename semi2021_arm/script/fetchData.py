@@ -32,6 +32,9 @@ class HumanPoseTeleop:
         self.cmd_vel_pub = rospy.Publisher('/tello/cmd_vel', Twist, queue_size=10)
         self.takeoff_pub = rospy.Publisher('/tello/takeoff', Empty, queue_size=1)
         self.land_pub = rospy.Publisher('/tello/land', Empty, queue_size=1)
+        
+        time.sleep(1.0)
+        rospy.Publisher('tello/takeoff',Empty,queue_size=1).publish()
 
     def setZero(self, twist):
         twist.linear.x = 0.0
