@@ -78,11 +78,6 @@ class HumanPoseTeleop:
             if nose[0]:
                 nose_pos = pose[nose[1]].position
 
-            
-            if nose_pos is None:
-                self.land_pub.publish()
-            else:
-                self.takeoff_pub.publish()
 
 
             tw = Twist()
