@@ -18,7 +18,7 @@ canvasX = 3
 canvasY = 1.5
 
 global r
-r = 40.0
+r = 1.0
 
 class naka:
     def __init__(self):
@@ -27,8 +27,12 @@ class naka:
         self.land_pub = rospy.Publisher('/tello/land', Empty, queue_size=1)
         self.tw = Twist()
 
+        self.setZero()
         time.sleep(1.0)
         rospy.Publisher('tello/takeoff',Empty,queue_size=1).publish()
+        self.setZero()
+        time.sleep(5)
+        self.pub()
 
 
     def setZero(self):
@@ -38,30 +42,33 @@ class naka:
         self.tw.angular.x = 0.0
         self.tw.angular.y = 0.0
         self.tw.angular.z = 0.0
-        self.cmd_vel_pub(self.tw)
+        self.cmd_vel_pub.publish(self.tw)
+        self.cmd_vel_pub.publish(self.tw)
+        self.cmd_vel_pub.publish(self.tw)
+        time.sleep(1.0)
 
     def goHighLow(self, l):
-        self.tw.linear.z = 0.1
-        self.cmd_vel_pub(self.tw)
-        time.sleep(l/0.1)
+        self.tw.linear.z = 0.3
+        self.cmd_vel_pub.publish(self.tw)
+        time.sleep(l)
         self.setZero()
     
     def goLR(self, l):
-        self.tw.linear.y = 0.1
-        self.cmd_vel_pub(self.tw)
-        time.sleep(l/0.1)
+        self.tw.linear.y = 0.3
+        self.cmd_vel_pub.publish(self.tw)
+        time.sleep(l)
         self.setZero()
     
     def setOn(self):
         self.tw.linear.x = 0.05
-        self.cmd_vel_pub(self.tw)
-        time.sleep(5)
+        self.cmd_vel_pub.publish(self.tw)
+        time.sleep(1.0)
         self.setZero()
     
     def setOff(self):
         self.tw.linear.x = -0.05
-        self.cmd_vel_pub(self.tw)
-        time.sleep(5)
+        self.cmd_vel_pub.publish(self.tw)
+        time.sleep(1.0)
         self.setZero()
 
     def pub(self):
@@ -91,6 +98,9 @@ class naka:
         self.setOn()
         self.goHighLow(-R)
         self.setOff()
+
+        time.sleep(1.0)
+        self.land_pub.publish()
 
 
         

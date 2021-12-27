@@ -26,18 +26,58 @@ halfX = width/2.0
 baseX = width/4.0
 baseY = height/2.0
 
-class HumanPoseTeleop:
+global N
+N = 500
+
+
+class final:
     def __init__(self):
 
         self.human_pose_sub = rospy.Subscriber('/edgetpu_human_pose_estimator/output/poses', PeoplePoseArray, self.callback)
         self.chat_pub = rospy.Publisher('chatter', String, queue_size=10);
+        self.takeoff_pub = rospy.Publisher('tello/takeoff',Empty,queue_size=1)
+        self.land_pub = rospy.Publisher('land', Empty, queue_size=1)
+        self.cmd_vel_pub = rospy.Publisher('tello/cmd_vel',Twist, queue_size=10)
+        self.R = 0.7
+        self.totalTime = 10.0
+        self.tw = Twist()
         time.sleep(1.0)
-        rospy.Publisher('tello/takeoff',Empty,queue_size=1).publish()
+        self.setZero()
+        self.takeoff_pub.publish()
+        self.setZero()
+        time.sleep(5.0)
+        
 
-    def setZero(self, twist):
-        twist.linear.x = 0.0
-        twist.linear.y = 0.0
-        twist.linear.z = 0.0
+    def setZero(self):
+        self.tw.linear.x = 0.0
+        self.tw.linear.y = 0.0
+        self.tw.linear.z = 0.0
+        self.tw.angular.x = 0.0
+        self.tw.angular.y = 0.0
+        self.tw.angular.z = 0.0
+        self.cmd_vel_pub.publish(self.tw)
+
+    def setX(self,x):
+        self.tw.linear.x = x
+
+    def setYZ(self, y,z):
+        self.tw.linear.y = y
+        self.tw.linear.z = z
+        self.cmd_vel_pub.publish(self.tw)
+
+    def circle(self):
+        interval =  self.totalTime / float(N)
+        theta = 2*math.pi / N
+        self.setZero()
+        for i in range(N):
+            Ys = -self.R*math.sin(theta*i)*0.6
+            Zs = self.R*math.cos(theta*i)*1.2
+            self.setYZ(Ys, Zs)
+            time.sleep(interval)
+            self.setZero()
+        self.setZero()
+        time.sleep(1.0)
+
 
     def callback(self, msg):
         right_wrist = (False, 0)
@@ -95,6 +135,9 @@ class HumanPoseTeleop:
                 if left_wrist_pos.y < left_elbow_pos.y and right_wrist_pos.y < right_elbow_pos.y:
                     str = 'OK'
                     rospy.loginfo_throttle(0.5,str)
+                    self.circle()
+                    
+                    
                 elif left_wrist_pos.y > left_elbow_pos.y and right_wrist_pos.y > right_elbow_pos.y:
                     str = 'naka'
                     rospy.loginfo_throttle(0.5, str)
@@ -103,8 +146,8 @@ class HumanPoseTeleop:
 
 if __name__ == '__main__':
     try:
-        rospy.init_node('human_pose_teleop', anonymous=True)
-        teleop_node = HumanPoseTeleop()
+        rospy.init_node('final', anonymous=True)
+        teleop_node = final()
         rospy.spin()
 
     except rospy.ROSInterruptException: pass

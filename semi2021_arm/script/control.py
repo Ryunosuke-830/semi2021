@@ -16,12 +16,12 @@ def control():
     """
     time.sleep(1.0)
     msg = Twist()
-    msg.linear.x = 0.5
+    msg.linear.y = 0.5
     pub.publish(msg)
 
     time.sleep(1.0)
 
-    msg.linear.x = 0
+    msg.linear.y = 0
     pub.publish(msg)
 
 

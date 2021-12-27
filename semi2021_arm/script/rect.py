@@ -18,13 +18,13 @@ canvasX = 3
 canvasY = 1.5
 
 global N
-N = 500
+N = 100
 
 global TotalTime
-TotalTime = 10.0
+TotalTime = 30.0
 
 global R
-R = 0.7
+R = 0.3
 
 class circle:
     def __init__(self):
@@ -57,23 +57,21 @@ class circle:
         self.cmd_vel_pub.publish(self.tw)
 
     def pub(self):
-        interval =  TotalTime / float(N)
-        theta = 2*math.pi / N
-        self.setYZ(R,0)
-        time.sleep(1.1)
+        v = 0.6
+        time.sleep(1.0)
+        interval = TotalTime / 8.0
+        self.setYZ(-v*0.5, 0)
+        time.sleep(interval)
+        self.setYZ(0,-v)
+        time.sleep(interval)
+        self.setYZ(v*0.5, 0)
+        time.sleep(interval)
+        self.setYZ(0,v)
+        time.sleep(interval)
         self.setZero()
         time.sleep(1.0)
-        for i in range(N):
-            Ys = -R*math.sin(theta*i)*0.6
-            Zs = R*math.cos(theta*i)*1.2
-            self.setYZ(Ys, Zs)
-            time.sleep(interval)
-            self.setZero()
-        time.sleep(1.0)
-        self.setYZ(-R,0)
-        time.sleep(1.1)
-        self.setZero()
-        time.sleep(1.0)
+        
+
         self.land_pub.publish()
 
  
